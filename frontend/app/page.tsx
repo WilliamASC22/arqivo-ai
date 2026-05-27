@@ -2,192 +2,208 @@
 
 import { useState } from "react";
 
-type AnalysisResult = {
-  report: {
-    summary: string;
-    case_type: string;
-    important_dates: string[];
-    missing_information: string[];
-    risk: {
-      risk_level: string;
-      risk_score: number;
-      reasons: string[];
-    };
-    recommended_steps: string[];
-    draft_message: string;
-  };
-  quality_check: {
-    quality_status: string;
-    warnings: string[];
-  };
-  audit_log: string[];
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  source?: string;
 };
 
-const sampleText = `Maria submitted a request for rent assistance. She included her ID and proof of address, but did not include proof of income. Her deadline is May 30. She asked if her case can still be reviewed before the deadline.`;
+const sampleCase = `Maria submitted a request for rent assistance. She included her ID and proof of address, but did not include proof of income. Her deadline is May 30. She asked if her case can still be reviewed before the deadline.`;
 
-export default function Home() {
-  const [text, setText] = useState(sampleText);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+const suggestedQuestions = [
+  "Summarize this case",
+  "What information is missing?",
+  "What is the risk level?",
+  "What should I do next?",
+  "Draft a response",
+  "Generate a final report",
+];
+
+export default function ChatHomePage() {
+  const [caseText, setCaseText] = useState(sampleCase);
+  const [message, setMessage] = useState("");
+  const [chat, setChat] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content:
+        "Hi, I’m Arqivo AI. Paste a case note or document text, then ask me to summarize it, find missing information, check risk, plan next steps, or draft a response.",
+      source: "Arqivo AI",
+    },
+  ]);
   const [loading, setLoading] = useState(false);
 
-  async function runAgents() {
+  async function sendMessage(customMessage?: string) {
+    const finalMessage = customMessage || message;
+
+    if (!finalMessage.trim()) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: finalMessage,
+    };
+
+    setChat((previous) => [...previous, userMessage]);
+    setMessage("");
     setLoading(true);
-    setResult(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    const response = await fetch(`${apiUrl}/analyze`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
+      const response = await fetch(`${apiUrl}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: finalMessage,
+          case_text: caseText,
+        }),
+      });
 
-    const data = await response.json();
-    setResult(data);
+      const data = await response.json();
+
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: data.reply,
+        source: data.source,
+      };
+
+      setChat((previous) => [...previous, assistantMessage]);
+    } catch {
+      const errorMessage: ChatMessage = {
+        role: "assistant",
+        content:
+          "Sorry, I could not reach the Arqivo AI backend. Make sure your FastAPI server is running.",
+        source: "System",
+      };
+
+      setChat((previous) => [...previous, errorMessage]);
+    }
+
     setLoading(false);
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <div className="mb-10">
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-300">
-            Multi-Agent AI Workflow Demo
+            Multi-Agent AI Chatbot
           </p>
+
           <h1 className="mb-4 text-5xl font-bold">Arqivo AI</h1>
+
           <p className="max-w-3xl text-lg text-slate-300">
-            A public demo app that turns messy case notes and documents into
-            summaries, missing-information checks, risk flags, next-step plans,
-            draft responses, and audit logs.
+            Chat with a multi-agent assistant that can summarize case notes,
+            find missing information, check risks, create next steps, draft
+            responses, and generate review-ready reports.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-            <h2 className="mb-4 text-2xl font-semibold">Try the demo</h2>
+        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+          <aside className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
+            <h2 className="mb-3 text-2xl font-semibold">
+              Case or Document Text
+            </h2>
+
             <p className="mb-4 text-sm text-slate-400">
-              Paste a fake case note below. Do not enter private or sensitive information.
+              Paste fake demo text here. Do not enter private or sensitive
+              information.
             </p>
 
             <textarea
-              className="h-72 w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-100 outline-none focus:border-blue-400"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+              className="h-[420px] w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-100 outline-none focus:border-blue-400"
+              value={caseText}
+              onChange={(event) => setCaseText(event.target.value)}
             />
 
             <button
-              onClick={runAgents}
-              disabled={loading}
-              className="mt-4 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-400 disabled:opacity-50"
+              onClick={() => setCaseText(sampleCase)}
+              className="mt-4 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-600"
             >
-              {loading ? "Running agents..." : "Run AI Agents"}
+              Reset Sample Case
             </button>
-          </div>
+          </aside>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-            <h2 className="mb-4 text-2xl font-semibold">Agents in this system</h2>
-            <div className="space-y-3 text-sm text-slate-300">
-              <p><strong>Intake Agent:</strong> Finds the case type, dates, and keywords.</p>
-              <p><strong>Summary Agent:</strong> Explains the case in simple words.</p>
-              <p><strong>Missing Info Agent:</strong> Checks what required details are missing.</p>
-              <p><strong>Risk Agent:</strong> Flags deadlines, missing info, and suspicious text.</p>
-              <p><strong>Planner Agent:</strong> Creates next steps.</p>
-              <p><strong>Message Agent:</strong> Drafts a human-reviewed response.</p>
-              <p><strong>Quality Agent:</strong> Checks whether the result needs review.</p>
-            </div>
-          </div>
-        </div>
+          <section className="rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
+            <div className="border-b border-slate-800 p-6">
+              <h2 className="text-2xl font-semibold">Chat with Arqivo AI</h2>
 
-        {result && (
-          <section className="mt-10 grid gap-6 lg:grid-cols-2">
-            <ResultCard title="Summary">
-              <p>{result.report.summary}</p>
-            </ResultCard>
-
-            <ResultCard title="Case Details">
-              <p><strong>Case Type:</strong> {result.report.case_type}</p>
-              <p>
-                <strong>Important Dates:</strong>{" "}
-                {result.report.important_dates.length
-                  ? result.report.important_dates.join(", ")
-                  : "None found"}
+              <p className="mt-1 text-sm text-slate-400">
+                Ask questions about the case text using the buttons below or
+                type your own.
               </p>
-            </ResultCard>
 
-            <ResultCard title="Missing Information">
-              {result.report.missing_information.length ? (
-                <ul className="list-inside list-disc">
-                  {result.report.missing_information.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No missing information found.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {suggestedQuestions.map((question) => (
+                  <button
+                    key={question}
+                    onClick={() => sendMessage(question)}
+                    className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-blue-400 hover:text-white"
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-[460px] space-y-4 overflow-y-auto p-6">
+              {chat.map((item, index) => (
+                <div
+                  key={index}
+                  className={
+                    item.role === "user"
+                      ? "ml-auto max-w-[80%] rounded-2xl bg-blue-500 p-4 text-white"
+                      : "mr-auto max-w-[80%] rounded-2xl bg-slate-800 p-4 text-slate-100"
+                  }
+                >
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-6">
+                    {item.content}
+                  </pre>
+
+                  {item.source && (
+                    <p className="mt-3 text-xs text-slate-400">
+                      Source: {item.source}
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              {loading && (
+                <div className="mr-auto max-w-[80%] rounded-2xl bg-slate-800 p-4 text-sm text-slate-300">
+                  Arqivo AI is thinking...
+                </div>
               )}
-            </ResultCard>
+            </div>
 
-            <ResultCard title="Risk Analysis">
-              <p><strong>Risk Level:</strong> {result.report.risk.risk_level}</p>
-              <p><strong>Risk Score:</strong> {result.report.risk.risk_score}</p>
-              <ul className="mt-2 list-inside list-disc">
-                {result.report.risk.reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            </ResultCard>
+            <div className="border-t border-slate-800 p-4">
+              <div className="flex gap-3">
+                <input
+                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-blue-400"
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Ask Arqivo AI a question..."
+                />
 
-            <ResultCard title="Recommended Next Steps">
-              <ol className="list-inside list-decimal">
-                {result.report.recommended_steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </ResultCard>
-
-            <ResultCard title="Draft Message">
-              <pre className="whitespace-pre-wrap rounded-xl bg-slate-950 p-4 text-sm">
-                {result.report.draft_message}
-              </pre>
-            </ResultCard>
-
-            <ResultCard title="Quality Check">
-              <p><strong>Status:</strong> {result.quality_check.quality_status}</p>
-              {result.quality_check.warnings.length > 0 && (
-                <ul className="mt-2 list-inside list-disc">
-                  {result.quality_check.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              )}
-            </ResultCard>
-
-            <ResultCard title="Audit Log">
-              <ol className="list-inside list-decimal">
-                {result.audit_log.map((log) => (
-                  <li key={log}>{log}</li>
-                ))}
-              </ol>
-            </ResultCard>
+                <button
+                  onClick={() => sendMessage()}
+                  disabled={loading}
+                  className="rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-400 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
           </section>
-        )}
+        </div>
       </section>
     </main>
-  );
-}
-
-function ResultCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-      <h3 className="mb-3 text-xl font-semibold text-blue-300">{title}</h3>
-      <div className="space-y-2 text-sm text-slate-300">{children}</div>
-    </div>
   );
 }

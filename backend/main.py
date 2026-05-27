@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from agents import run_all_agents
 from sample_data import SAMPLE_CASES
+from chat_agent import get_chat_response
 
 
 app = FastAPI(title="Arqivo AI Backend")
@@ -22,6 +23,11 @@ class AnalyzeRequest(BaseModel):
     text: str
 
 
+class ChatRequest(BaseModel):
+    message: str
+    case_text: str = ""
+
+
 @app.get("/")
 def home():
     return {
@@ -38,4 +44,10 @@ def get_sample_cases():
 @app.post("/analyze")
 def analyze_case(request: AnalyzeRequest):
     result = run_all_agents(request.text)
+    return result
+
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    result = get_chat_response(request.message, request.case_text)
     return result

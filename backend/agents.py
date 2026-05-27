@@ -12,6 +12,7 @@ def intake_agent(text: str) -> Dict:
     lowered = text.lower()
 
     case_type = "general"
+
     if "rent" in lowered or "housing" in lowered:
         case_type = "housing"
     elif "student" in lowered or "graduating" in lowered or "registration" in lowered:
@@ -20,6 +21,7 @@ def intake_agent(text: str) -> Dict:
         case_type = "refund"
 
     important_dates = []
+
     if "may 30" in lowered:
         important_dates.append("May 30")
     if "next week" in lowered:
@@ -27,14 +29,16 @@ def intake_agent(text: str) -> Dict:
     if "tomorrow" in lowered:
         important_dates.append("Tomorrow")
 
+    detected_keywords = [
+        word
+        for word in ["deadline", "missing", "urgent", "refund", "rent", "student"]
+        if word in lowered
+    ]
+
     return {
         "case_type": case_type,
         "important_dates": important_dates,
-        "detected_keywords": [
-            word
-            for word in ["deadline", "missing", "urgent", "refund", "rent", "student"]
-            if word in lowered
-        ],
+        "detected_keywords": detected_keywords,
     }
 
 
@@ -42,15 +46,28 @@ def summary_agent(text: str, intake: Dict) -> str:
     case_type = intake["case_type"]
 
     if case_type == "housing":
-        return "This case is about a rent assistance request where some documents were submitted, but proof of income may be missing."
+        return (
+            "This case is about a rent assistance request. The person submitted "
+            "some documents, but the case may be incomplete because proof of income "
+            "appears to be missing."
+        )
 
     if case_type == "student":
-        return "This case is about a student who needs advising support to stay on track for graduation and registration."
+        return (
+            "This case is about a student who needs advising support to stay on track "
+            "for graduation and registration."
+        )
 
     if case_type == "refund":
-        return "This case is about a customer who believes they were charged twice and needs a refund review."
+        return (
+            "This case is about a customer who believes they were charged twice and "
+            "needs a refund review."
+        )
 
-    return "This case contains a request that needs to be reviewed, organized, and assigned next steps."
+    return (
+        "This case contains a request that needs to be reviewed, organized, and assigned "
+        "clear next steps."
+    )
 
 
 def missing_info_agent(text: str, case_type: str) -> List[str]:
@@ -59,14 +76,21 @@ def missing_info_agent(text: str, case_type: str) -> List[str]:
     missing = []
 
     for item in required:
-        if item.lower() not in lowered:
+        item_lower = item.lower()
+
+        negative_phrases = [
+            f"did not include {item_lower}",
+            f"does not include {item_lower}",
+            f"missing {item_lower}",
+            f"without {item_lower}",
+        ]
+
+        if any(phrase in lowered for phrase in negative_phrases):
+            missing.append(item)
+        elif item_lower not in lowered:
             missing.append(item)
 
-    if "did not include proof of income" in lowered:
-        if "proof of income" not in missing:
-            missing.append("proof of income")
-
-    return missing
+    return list(dict.fromkeys(missing))
 
 
 def risk_agent(text: str, missing_info: List[str], intake: Dict) -> Dict:
@@ -105,11 +129,13 @@ def risk_agent(text: str, missing_info: List[str], intake: Dict) -> Dict:
 
 
 def planner_agent(case_type: str, missing_info: List[str], risk: Dict) -> List[str]:
-    steps = ["Review the submitted information."]
+    steps = []
+
+    steps.append("Review the submitted information and confirm the main request.")
 
     if missing_info:
         steps.append(
-            "Ask the user to provide the missing information: "
+            "Ask the person to provide the missing information: "
             + ", ".join(missing_info)
             + "."
         )
@@ -117,8 +143,9 @@ def planner_agent(case_type: str, missing_info: List[str], risk: Dict) -> List[s
     if risk["risk_level"] in ["Medium", "High"]:
         steps.append("Send the case to a human reviewer before taking final action.")
 
-    steps.append("Prepare a clear response explaining the next step.")
-    steps.append("Mark the case as complete after review.")
+    steps.append("Prepare a clear response explaining what is needed or what will happen next.")
+    steps.append("Update the audit log with the action taken.")
+    steps.append("Mark the case complete only after the review is finished.")
 
     return steps
 
@@ -126,19 +153,46 @@ def planner_agent(case_type: str, missing_info: List[str], risk: Dict) -> List[s
 def message_agent(case_type: str, missing_info: List[str]) -> str:
     if missing_info:
         return (
+            "Subject: Additional Information Needed for Your Request\n\n"
             "Hello,\n\n"
-            "Thank you for submitting your request. We reviewed the information provided and noticed that "
-            f"the following item is still missing: {', '.join(missing_info)}. "
-            "Please provide this information so the case can continue to be reviewed.\n\n"
-            "Best,\nArqivo AI Team"
+            "Thank you for submitting your request. We reviewed the information you provided, "
+            "and we noticed that the following item is still needed before the review can continue:\n\n"
+            + "\n".join([f"- {item}" for item in missing_info])
+            + "\n\nPlease provide this information so your case can continue through the review process.\n\n"
+            "Best,\n"
+            "[Your Name]\n"
+            "[Your Role / Organization]"
         )
 
     return (
+        "Subject: Your Request Is Ready for Review\n\n"
         "Hello,\n\n"
-        "Thank you for submitting your request. We reviewed the information provided and your case is ready "
-        "for the next step in the review process.\n\n"
-        "Best,\nArqivo AI Team"
+        "Thank you for submitting your request. We reviewed the information provided, "
+        "and your case appears ready for the next step in the review process.\n\n"
+        "A reviewer will follow up if any additional information is needed.\n\n"
+        "Best,\n"
+        "[Your Name]\n"
+        "[Your Role / Organization]"
     )
+
+
+def report_agent(
+    summary: str,
+    intake: Dict,
+    missing_info: List[str],
+    risk: Dict,
+    steps: List[str],
+    draft_message: str,
+) -> Dict:
+    return {
+        "summary": summary,
+        "case_type": intake["case_type"],
+        "important_dates": intake["important_dates"],
+        "missing_information": missing_info,
+        "risk": risk,
+        "recommended_steps": steps,
+        "draft_message": draft_message,
+    }
 
 
 def quality_agent(report: Dict) -> Dict:
@@ -166,17 +220,7 @@ def run_all_agents(text: str) -> Dict:
     risk = risk_agent(text, missing, intake)
     steps = planner_agent(intake["case_type"], missing, risk)
     draft = message_agent(intake["case_type"], missing)
-
-    report = {
-        "summary": summary,
-        "case_type": intake["case_type"],
-        "important_dates": intake["important_dates"],
-        "missing_information": missing,
-        "risk": risk,
-        "recommended_steps": steps,
-        "draft_message": draft,
-    }
-
+    report = report_agent(summary, intake, missing, risk, steps, draft)
     quality = quality_agent(report)
 
     audit_log = [

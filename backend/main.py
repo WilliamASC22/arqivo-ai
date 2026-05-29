@@ -26,6 +26,7 @@ class AnalyzeRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     case_text: str = ""
+    history: list[dict] = []
 
 
 @app.get("/")
@@ -49,5 +50,10 @@ def analyze_case(request: AnalyzeRequest):
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    result = get_chat_response(request.message, request.case_text)
+    result = get_chat_response(
+        request.message,
+        request.case_text,
+        request.history,
+    )
+
     return result

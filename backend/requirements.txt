@@ -2,6 +2,4 @@ fastapi
 uvicorn[standard]
 pydantic
 python-multipart
-transformers
-torch
-sentencepiece
+requests

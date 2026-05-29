@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agents import run_all_agents
 from sample_data import SAMPLE_CASES
@@ -26,7 +28,7 @@ class AnalyzeRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     case_text: str = ""
-    history: list[dict] = []
+    history: List[Dict] = Field(default_factory=list)
 
 
 @app.get("/")

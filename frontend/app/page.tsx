@@ -60,12 +60,19 @@ export default function Home() {
     setInput("");
     setLoading(true);
 
+    const controller = new AbortController();
+
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 30000);
+
     try {
       const response = await fetch(`${apiUrl}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
           message: messageToSend,
           case_text: caseText,
@@ -75,6 +82,8 @@ export default function Home() {
           })),
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error("Chat request failed");
@@ -94,6 +103,8 @@ export default function Home() {
         },
       ]);
     } catch {
+      clearTimeout(timeoutId);
+
       setMessages((currentMessages) => [
         ...currentMessages,
         {

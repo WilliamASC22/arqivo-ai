@@ -73,6 +73,19 @@ def local_fallback(user_message: str, case_text: str) -> str:
         "sup",
     ]
 
+    vague_words = [
+        "money",
+        "rent",
+        "income",
+        "deadline",
+        "documents",
+        "proof",
+        "case",
+        "help",
+        "issue",
+        "problem",
+    ]
+
     if not case_text.strip():
         if message in greetings:
             return (
@@ -105,13 +118,22 @@ def local_fallback(user_message: str, case_text: str) -> str:
             "'What is missing from this case?' or 'What should the worker do next?'"
         )
 
+    if message in vague_words:
+        return (
+            f"When you say '{user_message}', what would you like me to do with that part of the case?\n\n"
+            "For example, you can ask:\n"
+            "- How does this relate to the case?\n"
+            "- Is this information missing?\n"
+            "- What should the worker do about it?\n"
+            "- Can you explain the issue in simple words?"
+        )
+
     try:
         result = run_all_agents(case_text)
         report = result["report"]
         risk = report["risk"]
 
         missing_information = report.get("missing_information", [])
-        important_dates = report.get("important_dates", [])
         recommended_steps = report.get("recommended_steps", [])
 
         if "missing" in message or "need" in message or "required" in message:
@@ -159,17 +181,10 @@ def local_fallback(user_message: str, case_text: str) -> str:
                 "I can draft a response, but I need more case details first.",
             )
 
-        if "money" in message or "rent" in message or "assistance" in message:
-            return (
-                "This case appears to involve rent assistance. The important issue is that the person "
-                "submitted some documents, but proof of income appears to be missing. That missing item "
-                "could delay the review."
-            )
-
         return (
-            "I can help with that. Based on the case text, this is a rent assistance request where "
-            "proof of income appears to be missing and the case has a May 30 deadline. "
-            "The best next step is to request the missing proof of income and review the case before the deadline."
+            "I can help with that, but I need a more specific question. "
+            "Try asking what is missing, what the risk level is, what the worker should do next, "
+            "or whether I should draft a response."
         )
 
     except Exception:

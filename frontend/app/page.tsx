@@ -26,13 +26,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const chatApiUrl =
+    process.env.NEXT_PUBLIC_CHAT_API_URL ||
+    "https://arqivo-ai-chat.williab.workers.dev";
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
       content:
-        "Hi, I’m Arqivo AI. I can help you review the case text on the left. Ask me what is missing, what the risk is, what to do next, or ask me to draft a response.",
+        "Hi, I’m Arqivo AI. Paste or edit a case in the Document Context box, then ask me to summarize it, find missing information, assess risk, suggest next steps, draft a response, or generate a report.",
       source: "Arqivo AI",
     },
   ]);
@@ -67,7 +69,7 @@ export default function Home() {
     }, 30000);
 
     try {
-      const response = await fetch(`${apiUrl}/chat`, {
+      const response = await fetch(`${chatApiUrl}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +112,7 @@ export default function Home() {
         {
           role: "assistant",
           content:
-            "I could not connect to the backend. Make sure the FastAPI server is running and NEXT_PUBLIC_API_URL is correct.",
+            "I could not connect to Cloudflare Workers AI right now. The free daily limit may have been reached, or the chat endpoint may be unavailable.",
           source: "Connection Error",
         },
       ]);
@@ -136,8 +138,8 @@ export default function Home() {
             <h1 className="mt-2 text-2xl font-bold">Document Context</h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Paste demo case text here. Do not enter private or sensitive
-              information.
+              Paste or edit demo case text here. Do not enter private or
+              sensitive real information.
             </p>
           </div>
 
@@ -145,7 +147,8 @@ export default function Home() {
             <textarea
               value={caseText}
               onChange={(event) => setCaseText(event.target.value)}
-              className="min-h-[430px] flex-1 resize-none rounded-2xl border border-white/10 bg-[#070b16] p-4 text-sm leading-7 text-slate-100 outline-none transition focus:border-blue-400"
+              placeholder="Paste a case note, request, email, or document text here..."
+              className="min-h-[430px] flex-1 resize-none rounded-2xl border border-white/10 bg-[#070b16] p-4 text-sm leading-7 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-blue-400"
             />
 
             <button
@@ -176,7 +179,7 @@ export default function Home() {
               </div>
 
               <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300">
-                ● Chat mode
+                ● Cloudflare AI mode
               </div>
             </div>
 
@@ -243,7 +246,7 @@ export default function Home() {
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="Message Arqivo AI..."
+                placeholder="Ask about the case..."
                 className="flex-1 rounded-2xl border border-white/10 bg-[#070b16] px-5 py-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-400"
               />
 

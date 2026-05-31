@@ -13,3 +13,17 @@ frontend/node_modules/
 
 # Mac
 .DS_Store
+# Dependencies
+node_modules/
+cloudflare-worker/node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+
+# Python environments
+venv/
+backend/venv/
+__pycache__/
+*.pyc

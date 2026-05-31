@@ -1,0 +1,6 @@
+name = "arqivo-ai-chat"
+main = "src/index.ts"
+compatibility_date = "2026-05-30"
+
+[ai]
+binding = "AI"

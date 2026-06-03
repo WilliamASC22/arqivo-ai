@@ -1,139 +1,16 @@
 # Arqivo AI
 
-Arqivo AI is a public case-assistant and multi-agent workflow demo. It helps users turn messy case notes, emails, requests, and document text into organized summaries, missing-information checks, risk explanations, next-step plans, draft responses, and review-ready reports.
+A full-stack AI case-assistant demo that helps users turn messy case notes, emails, requests, and document text into organized summaries, missing-information checks, risk explanations, next-step plans, draft responses, and review-ready reports.
 
-## Project Goal
+Arqivo AI is designed as a human-in-the-loop workflow assistant. It does not make final decisions automatically and should not be used as a replacement for professional judgment.
 
-The goal of Arqivo AI is to show how AI-assisted workflows can support real-world operations while keeping humans in control of final decisions.
+---
 
-Arqivo AI does not make final decisions automatically. It is meant to help users review information faster, organize messy text, identify possible gaps, and prepare clearer next steps.
+## Running Locally
 
-## Current Features
+After cloning the repository and `cd`'ing into it:
 
-- Public chatbot interface
-- User-editable case/document text box
-- Cloudflare Workers AI chat responses
-- Summary generation
-- Missing-information checks
-- Risk-level explanations
-- Suggested next steps
-- Draft response generation
-- Final report generation
-- Structured multi-agent demo page
-- Review queue demo page
-- Architecture page
-- Safety reminders for public demo use
-- Clear workspace button
-- Sample case button
-- Request limits to reduce free AI usage
-
-## Safety and Privacy Notes
-
-Arqivo AI is a public demo.
-
-Users should not enter real private or sensitive information, including real names, addresses, ID numbers, phone numbers, emails, medical information, financial information, confidential documents, or private case details.
-
-The main chat page does not store user-entered case text in an Arqivo AI database. The text is held in browser state and clears on refresh or when the user clicks Clear All.
-
-When a user sends a message, the case text is sent to Cloudflare Workers AI for processing. For safety, users should use fake demo text or placeholders instead of real private information.
-
-## Architecture
-
-The project uses three main parts.
-
-```txt
-Main Chat Page
-Next.js frontend on Vercel
-        ↓
-Cloudflare Worker
-        ↓
-Cloudflare Workers AI
-```
-
-```txt
-Agent Demo Page
-Next.js frontend on Vercel
-        ↓
-FastAPI backend
-        ↓
-Hugging Face Spaces
-```
-
-```txt
-Structured Agents
-Intake Agent
-Summary Agent
-Missing Information Agent
-Risk Agent
-Planner Agent
-Message Drafting Agent
-Quality Review / Audit-style outputs
-```
-
-## Tech Stack
-
-- Frontend: Next.js, TypeScript, Tailwind CSS
-- Main AI Chat: Cloudflare Workers AI
-- Chat API Layer: Cloudflare Worker
-- Backend Demo API: FastAPI, Python
-- Backend Hosting: Hugging Face Spaces
-- Frontend Hosting: Vercel
-- Worker Hosting: Cloudflare Workers
-
-## Main Chat Flow
-
-```txt
-User enters demo case text
-        ↓
-User asks a question
-        ↓
-Frontend sends case text and question to Cloudflare Worker
-        ↓
-Cloudflare Workers AI generates a response
-        ↓
-Response appears in the chat
-```
-
-The main chat can help with questions like:
-
-- Summarize this case
-- What information is missing?
-- What is the risk level?
-- What should the worker do next?
-- Draft a response
-- Generate a final report
-
-## Agent Demo Flow
-
-The agent demo page shows the structured multi-agent workflow behind the project.
-
-```txt
-Case text
-   ↓
-Intake Agent
-   ↓
-Summary Agent
-   ↓
-Missing Information Agent
-   ↓
-Risk Agent
-   ↓
-Planner Agent
-   ↓
-Drafting / Review Output
-```
-
-This page is useful for showing how a case can be broken down into separate review steps.
-
-## Important Limits
-
-Cloudflare Workers AI is used for the main chatbot. The app is designed to reduce unnecessary usage by limiting the amount of case text, chat history, and output length sent with each request.
-
-Only a limited amount of case text is sent with each chat request. If the free AI limit is reached or the Cloudflare Worker is unavailable, the chat may fail temporarily.
-
-## Local Development
-
-### Frontend
+### 1) Start the frontend
 
 ```bash
 cd frontend
@@ -141,13 +18,15 @@ npm install
 npm run dev
 ```
 
-The frontend runs at:
+Open your browser and visit:
 
 ```txt
 http://localhost:3000
 ```
 
-### FastAPI Backend
+### 2) Start the FastAPI backend
+
+The FastAPI backend powers the structured agent demo routes.
 
 ```bash
 cd backend
@@ -161,7 +40,9 @@ The backend runs at:
 http://localhost:8000
 ```
 
-### Cloudflare Worker
+### 3) Deploy or update the Cloudflare Worker
+
+The Cloudflare Worker powers the main AI chatbot.
 
 ```bash
 cd cloudflare-worker
@@ -169,9 +50,11 @@ npm install
 npx wrangler deploy
 ```
 
+---
+
 ## Environment Variables
 
-For Vercel, configure these environment variables:
+For local or Vercel deployment, configure:
 
 ```txt
 NEXT_PUBLIC_CHAT_API_URL=<your Cloudflare Worker URL>
@@ -182,26 +65,88 @@ NEXT_PUBLIC_API_URL=<your FastAPI backend URL>
 
 `NEXT_PUBLIC_API_URL` is used by the FastAPI-backed agent demo.
 
-## Deployment
+---
 
-### Frontend
+## Safety Notes
 
-The frontend is hosted on Vercel.
+Arqivo AI is a public demo.
 
-After pushing changes to GitHub, redeploy the Vercel project if needed.
+Users should not enter real private or sensitive information, including real names, addresses, ID numbers, phone numbers, emails, medical information, financial information, confidential documents, or private case details.
 
-### Cloudflare Worker
+The main chat page does not store user-entered case text in an Arqivo AI database. The text is held in browser state and clears on refresh or when the user clicks Clear All.
 
-The Cloudflare Worker is deployed with Wrangler:
+When a user sends a message, the case text is sent to Cloudflare Workers AI for processing. For safety, users should use fake demo text or placeholders.
 
-```bash
-cd cloudflare-worker
-npx wrangler deploy
+---
+
+## Highlights
+
+- Public AI chatbot interface for case/document review
+- User-editable case text workspace
+- Cloudflare Workers AI integration for natural language responses
+- Structured multi-agent demo with intake, summary, missing-information, risk, planning, drafting, and quality review agents
+- Safety reminders for public demo use
+- Clear workspace and sample case controls
+- Request limits to reduce unnecessary AI usage
+- FastAPI backend for structured agent analysis
+- Vercel frontend deployment
+- Cloudflare Worker deployment for the main chat endpoint
+- Hugging Face Spaces backend deployment for the agent demo
+
+---
+
+## Tech Stack
+
+Frontend: Next.js, TypeScript, Tailwind CSS
+
+AI Chat: Cloudflare Workers AI
+
+Chat API Layer: Cloudflare Workers
+
+Backend Demo API: FastAPI, Python
+
+Hosting: Vercel, Cloudflare Workers, Hugging Face Spaces
+
+---
+
+## Architecture
+
+```txt
+Main Chat Page
+Client -> Vercel Frontend -> Cloudflare Worker -> Cloudflare Workers AI
 ```
 
-### Hugging Face Backend
+```txt
+Agent Demo Page
+Client -> Vercel Frontend -> FastAPI Backend -> Structured Agent Pipeline
+```
 
-The FastAPI backend is hosted on Hugging Face Spaces and supports the structured agent demo routes.
+```txt
+Structured Agent Pipeline
+Input Text
+-> Intake Agent
+-> Summary Agent
+-> Missing Information Agent
+-> Risk Agent
+-> Planner Agent
+-> Message Drafting Agent
+-> Quality Review / Audit-style Output
+```
+
+---
+
+## Example Use Cases
+
+Arqivo AI can help with prompts like:
+
+- Summarize this case
+- What information is missing?
+- What is the risk level?
+- What should the worker do next?
+- Draft a response
+- Generate a final report
+
+---
 
 ## Project Structure
 
@@ -236,18 +181,10 @@ arqivo-ai/
 └── README.md
 ```
 
-## Status
-
-Arqivo AI currently runs as a public full-stack demo with:
-
-- Vercel frontend
-- Cloudflare Workers AI chatbot
-- Hugging Face FastAPI backend for structured agent demos
-- Safety reminders for user-entered text
-- Request limits to reduce AI usage
+---
 
 ## Disclaimer
 
-Arqivo AI is a demo project. It should not be used as a replacement for professional judgment, legal advice, medical advice, financial advice, government decision-making, or official case review.
+Arqivo AI is a demo project. It should not be used as legal advice, medical advice, financial advice, government decision-making, or official case review.
 
 A human should always review the output before taking action.

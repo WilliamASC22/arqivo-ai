@@ -9,23 +9,23 @@ type ChatMessage = {
 };
 
 const sampleCase =
-  "Maria submitted a request for rent assistance. She included her ID and proof of address, but did not include proof of income. Her deadline is May 30. She asked if her case can still be reviewed before the deadline.";
+  "A tenant submitted a request for emergency rent assistance. They included a lease and proof of address, but did not include proof of income or a recent rent statement. The deadline is June 15, and they asked whether their case can still be reviewed before the notice period ends.";
 
 const quickPrompts = [
   "Summarize this case",
   "What information is missing?",
   "What is the risk level?",
-  "What should the worker do next?",
+  "Recommend next steps",
   "Draft a response",
   "Generate a final report",
 ];
 
 const sensitivePatterns = [
-  /\b\d{3}-\d{2}-\d{4}\b/, // SSN style
-  /\b\d{9}\b/, // possible 9 digit ID
-  /\b\d{16}\b/, // possible card number
-  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i, // email
-  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/, // phone
+  /\b\d{3}-\d{2}-\d{4}\b/,
+  /\b\d{9}\b/,
+  /\b\d{16}\b/,
+  /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
+  /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
 ];
 
 function hasPossibleSensitiveInfo(text: string) {
@@ -55,7 +55,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi, I’m Arqivo AI. Paste or edit a case in the Document Context box, then ask me to summarize it, find missing information, assess risk, suggest next steps, draft a response, or generate a report.",
+        "Hi, I’m Arqivo AI. Paste or edit a case in the Document Context box, then ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
       source: "Arqivo AI",
     },
   ]);
@@ -192,13 +192,13 @@ export default function Home() {
     ]);
   }
 
-  function loadSampleCase() {
+  function showSampleCase() {
     setCaseText(sampleCase);
     setMessages([
       {
         role: "assistant",
         content:
-          "Sample case loaded. Ask me to summarize it, find missing information, assess risk, suggest next steps, draft a response, or generate a report.",
+          "Sample case loaded. Ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
         source: "Arqivo AI",
       },
     ]);
@@ -268,7 +268,7 @@ export default function Home() {
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
-                onClick={loadSampleCase}
+                onClick={showSampleCase}
                 className="rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold transition hover:bg-slate-600"
               >
                 Show Sample

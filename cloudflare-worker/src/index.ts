@@ -41,11 +41,11 @@ function limitText(text: string, maxLength: number) {
 
 function detectPossibleSensitiveInfo(text: string) {
   const patterns = [
-    /\b\d{3}-\d{2}-\d{4}\b/, // SSN style
-    /\b\d{9}\b/, // possible 9 digit ID
-    /\b\d{16}\b/, // possible card number
-    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i, // email
-    /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/, // phone
+    /\b\d{3}-\d{2}-\d{4}\b/,
+    /\b\d{9}\b/,
+    /\b\d{16}\b/,
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i,
+    /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
   ];
 
   return patterns.some((pattern) => pattern.test(text));
@@ -76,11 +76,13 @@ function getTaskHint(message: string) {
 
   if (
     lower.includes("next") ||
-    lower.includes("worker") ||
+    lower.includes("reviewer") ||
+    lower.includes("case manager") ||
     lower.includes("steps") ||
+    lower.includes("recommend") ||
     lower.includes("do")
   ) {
-    return "Task: Recommend practical next steps for the worker in a numbered list.";
+    return "Task: Recommend practical next steps for the case reviewer in a numbered list. Do not use the word worker in the final answer.";
   }
 
   if (
@@ -95,30 +97,30 @@ Task: Draft a professional message.
 
 Format the message exactly like this:
 
-Dear [Recipient],
+Dear [Client Name],
 
 [Clear opening paragraph that acknowledges the request.]
 
-[Clear body paragraph explaining what is needed, what is missing, or what the next step is.]
+[Clear body paragraph explaining what is missing, what is needed, or what happens next.]
 
 Best regards,
-[Sender]
+[Your Name or Department]
 
 Rules for drafted messages:
 - Do not wrap the message in quotation marks.
 - Do not say "Here is a draft" unless the user asks for explanation.
 - Do not add extra commentary after the signature.
-- Use placeholders like [Recipient] and [Sender] if names are not provided.
-- If a recipient name is clearly provided in the case text, you may use it.
+- Use placeholders like [Client Name] and [Your Name or Department] if names are not provided.
+- If a client, applicant, tenant, or contact name is clearly provided in the case text, you may use it.
 - Do not sign as Arqivo AI Team.
 `.trim();
   }
 
   if (lower.includes("report") || lower.includes("final")) {
-    return "Task: Create a concise final case report with sections for Summary, Missing Information, Risk Level, Recommended Next Steps, and Draft Response if relevant.";
+    return "Task: Create a concise final case report with sections for Summary, Missing Information, Risk Level, Recommended Next Steps, and Draft Response if relevant. Do not use the word worker in the final answer.";
   }
 
-  return "Task: Answer the user's question using the case text. If the question is vague, ask one helpful follow-up question.";
+  return "Task: Answer the user's question using the case text. If the question is vague, ask one helpful follow-up question. Do not use the word worker in the final answer.";
 }
 
 function buildPrompt(message: string, caseText: string, history: ChatMessage[]) {
@@ -139,7 +141,7 @@ Use a multi-agent style internally:
 1. Intake Agent: identify the request type and key facts.
 2. Missing Information Agent: find missing or incomplete information.
 3. Risk Agent: identify urgency, deadlines, incomplete documents, or review risks.
-4. Planner Agent: suggest practical next steps.
+4. Planning Agent: suggest practical next steps.
 5. Communication Agent: draft clear messages when asked.
 
 Safety rules:
@@ -147,6 +149,7 @@ Safety rules:
 - Do not invent facts that are not supported by the case text.
 - Do not say you are the Arqivo AI Team.
 - Do not sign messages as Arqivo AI Team.
+- Do not use the word "worker" in the final answer. Use "reviewer", "case reviewer", "case manager", or "team" instead.
 - When drafting a message, use a clean letter/email format with greeting, body paragraphs, closing, and sender placeholder.
 - If sensitive real information appears, remind the user to replace it with placeholders.
 - Keep the answer concise to save free AI usage.

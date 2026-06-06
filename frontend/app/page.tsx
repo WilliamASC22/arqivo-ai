@@ -8,8 +8,13 @@ type ChatMessage = {
   source?: string;
 };
 
-const sampleCase =
-  "A tenant submitted a request for emergency rent assistance. They included a lease and proof of address, but did not include proof of income or a recent rent statement. The deadline is June 15, and they asked whether their case can still be reviewed before the notice period ends.";
+const sampleCases = [
+  "A tenant submitted a request for emergency rent assistance. They included a lease and proof of address, but did not include proof of income or a recent rent statement. The deadline is June 15, and they asked whether their case can still be reviewed before the notice period ends.",
+  "A student submitted an appeal asking for additional time to complete required documents. They included a student ID and course schedule, but did not include the requested explanation letter. The deadline is July 3, and they asked what they should submit next.",
+  "A client requested help updating an application after moving to a new apartment. They included a new lease but did not include proof that the previous address is no longer active. They asked whether the application can continue while the address update is reviewed.",
+  "A family submitted a benefits renewal request. They included identification and proof of residency, but the income section is incomplete. The renewal deadline is June 28, and they asked whether missing documents will delay the review.",
+  "An applicant submitted a support request after receiving a notice about missing paperwork. They included the notice and a short explanation, but did not include the requested verification document. They asked what the next step should be.",
+];
 
 const quickPrompts = [
   "Summarize this case",
@@ -41,7 +46,8 @@ function limitText(text: string, maxLength: number) {
 }
 
 export default function Home() {
-  const [caseText, setCaseText] = useState(sampleCase);
+  const [sampleIndex, setSampleIndex] = useState(0);
+  const [caseText, setCaseText] = useState(sampleCases[0]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -192,13 +198,16 @@ export default function Home() {
     ]);
   }
 
-  function showSampleCase() {
-    setCaseText(sampleCase);
+  function useAnotherSample() {
+    const nextIndex = (sampleIndex + 1) % sampleCases.length;
+
+    setSampleIndex(nextIndex);
+    setCaseText(sampleCases[nextIndex]);
     setMessages([
       {
         role: "assistant",
         content:
-          "Sample case loaded. Ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
+          "A new sample case has been loaded. Ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
         source: "Arqivo AI",
       },
     ]);
@@ -268,10 +277,10 @@ export default function Home() {
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
-                onClick={showSampleCase}
+                onClick={useAnotherSample}
                 className="rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold transition hover:bg-slate-600"
               >
-                Show Sample
+                Use Another Sample
               </button>
 
               <button

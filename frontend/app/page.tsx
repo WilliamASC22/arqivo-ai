@@ -61,7 +61,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi, I’m Arqivo AI. Paste or edit a case in the Document Context box, then ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
+        "Hi, I’m Arqivo.\n\nWhat is a case?\nA case can be a request, application, email, note, or document that needs to be reviewed.\n\nWhat can I do?\nI can summarize the text, find missing information, explain risk, recommend next steps, draft a response, or generate a report.\n\nHow to use me:\n1. Paste or edit a case in the Document Context box.\n2. Choose a quick action or type your own question.\n3. Review the answer before taking action.",
       source: "Arqivo AI",
     },
   ]);
@@ -192,7 +192,7 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "Workspace cleared. Paste a new demo case in the Document Context box, then ask me what you want to know.",
+          "Workspace cleared.\n\nHow to use me:\n1. Paste a new case in the Document Context box.\n2. Choose a quick action or type your own question.\n3. Review the answer before taking action.",
         source: "Arqivo AI",
       },
     ]);
@@ -207,7 +207,7 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "A new sample case has been loaded. Ask me to summarize it, find missing information, assess risk, recommend next steps, draft a response, or generate a report.",
+          "A new sample case has been loaded.\n\nHow to use it:\n1. Read or edit the sample in the Document Context box.\n2. Choose a quick action or type your own question.\n3. Review Arqivo’s answer before taking action.",
         source: "Arqivo AI",
       },
     ]);
@@ -248,6 +248,7 @@ export default function Home() {
                 onChange={(event) => setPrivacyAccepted(event.target.checked)}
                 className="mt-1 h-4 w-4"
               />
+
               <span>
                 I understand this is a public demo and I will not enter private
                 or sensitive real information.
@@ -306,8 +307,9 @@ export default function Home() {
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  Ask natural questions. Arqivo can review the case, explain
-                  risks, plan next steps, and draft responses.
+                  Paste a request, email, note, or document. Arqivo helps turn
+                  it into a summary, checklist, next-step plan, or draft
+                  response.
                 </p>
               </div>
 

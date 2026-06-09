@@ -61,7 +61,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi, I’m Arqivo.\n\nWhat is a case?\nA case is text that needs to be reviewed. It can be a request, application, email, note, or document.\n\nWhat can I do?\nI can summarize it, find missing information, explain risk, recommend next steps, draft a response, or generate a report.\n\nHow to use me:\n1. Look at the Document Context box on the left.\n2. You can use the sample text, edit it, delete it, or paste your own demo text.\n3. Check the safety box to confirm you will not enter private information.\n4. Click a quick button, like “Summarize this case,” or type your own question.\n5. Read my answer and have a person review it before using it.",
+        "Hi, I’m Arqivo.\n\nWhat to do:\n1. Read or paste text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.\n4. Read the answer.\n5. Have a person review it before using it.\n\nI can help summarize, find missing information, explain risk, recommend next steps, draft a response, or make a report.",
       source: "Arqivo AI",
     },
   ]);
@@ -85,7 +85,7 @@ export default function Home() {
         {
           role: "assistant",
           content:
-            "Before using this demo, please check the safety box on the left. This confirms that you understand not to enter private or sensitive real information. The text is sent to Cloudflare Workers AI for processing, but Arqivo AI does not store it.",
+            "Please check the safety box on the left first. This means you understand not to enter private real information.",
           source: "Safety Check",
         },
       ]);
@@ -99,7 +99,7 @@ export default function Home() {
         {
           role: "assistant",
           content:
-            "This case text may contain sensitive information, such as an email, phone number, ID number, or similar personal data. Please remove or replace real private details with fake placeholders before sending it.",
+            "This text may contain private information. Please remove real names, emails, phone numbers, ID numbers, or other private details before sending.",
           source: "Safety Check",
         },
       ]);
@@ -192,7 +192,7 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "Workspace cleared.\n\nHow to start again:\n1. Paste demo text in the Document Context box on the left.\n2. Check the safety box if you have not already.\n3. Click a quick button or type your own question.\n4. Read the answer and have a person review it before using it.",
+          "Workspace cleared.\n\nTo start again:\n1. Paste text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.",
         source: "Arqivo AI",
       },
     ]);
@@ -207,7 +207,7 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "A new sample case has been loaded.\n\nHow to use this sample:\n1. Read the sample in the Document Context box on the left.\n2. You can keep it as-is or edit it.\n3. Check the safety box if you have not already.\n4. Click a quick button or type your own question.\n5. Read Arqivo’s answer and have a person review it before using it.",
+          "A new sample is ready.\n\nTo use it:\n1. Read the text on the left.\n2. Check the safety box.\n3. Click a button or type a question.",
         source: "Arqivo AI",
       },
     ]);
@@ -225,9 +225,8 @@ export default function Home() {
             <h1 className="mt-2 text-2xl font-bold">Enter Case Text</h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Paste a request, application, email, note, or document. This demo
-              does not store your text in Arqivo AI, and the workspace clears on
-              refresh.
+              Paste a request, application, email, note, or document. Arqivo AI
+              does not store your text, and the workspace clears on refresh.
             </p>
           </div>
 
@@ -268,7 +267,7 @@ export default function Home() {
             <textarea
               value={caseText}
               onChange={(event) => setCaseText(event.target.value)}
-              placeholder="Example: A client submitted a request for rent assistance. They included proof of address but did not include proof of income..."
+              placeholder="Paste demo case text here..."
               className="min-h-[390px] flex-1 resize-none rounded-2xl border border-white/10 bg-[#070b16] p-4 text-sm leading-7 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-blue-400"
             />
 

@@ -61,7 +61,7 @@ export default function Home() {
     {
       role: "assistant",
       content:
-        "Hi, I’m Arqivo.\n\nWhat to do:\n1. Read or paste text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.\n4. Read the answer.\n5. Have a person review it before using it.\n\nI can help summarize, find missing information, explain risk, recommend next steps, draft a response, or make a report.",
+        "Hi, I’m Arqivo.\n\nWhat is a case?\nA case is text that needs review, like a request, email, note, application, or document.\n\nWhat can I do?\nI can summarize it, find missing information, explain risk, recommend next steps, draft a response, or make a report.\n\nHow to use me:\n1. Put text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.\n4. Read the answer.\n5. Have a person review it before using it.",
       source: "Arqivo AI",
     },
   ]);

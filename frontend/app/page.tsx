@@ -33,6 +33,19 @@ const sensitivePatterns = [
   /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
 ];
 
+const welcomeMessage =
+  "Hi, I’m Arqivo.\n\n" +
+  "What is a case?\n" +
+  "A case is text that needs review, like a request, email, note, application, or document.\n\n" +
+  "What can I do?\n" +
+  "I can summarize it, find missing information, explain risk, recommend next steps, draft a response, or make a report.\n\n" +
+  "How to use me:\n" +
+  "1. Put a case, email, note, or document in the box on the left.\n" +
+  "2. Check the safety box to confirm you are not entering private information.\n" +
+  "3. Choose what you need: summary, missing info, risk, next steps, draft, or report.\n" +
+  "4. Arqivo will give you an organized answer based only on the text you entered.\n" +
+  "5. Review the answer. A real person must approve it before anyone uses it.";
+
 function hasPossibleSensitiveInfo(text: string) {
   return sensitivePatterns.some((pattern) => pattern.test(text));
 }
@@ -60,8 +73,7 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content:
-        "Hi, I’m Arqivo.\n\nWhat is a case?\nA case is text that needs review, like a request, email, note, application, or document.\n\nWhat can I do?\nI can summarize it, find missing information, explain risk, recommend next steps, draft a response, or make a report.\n\nHow to use me:\n1. Put text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.\n4. Read the answer.\n5. Have a person review it before using it.",
+      content: welcomeMessage,
       source: "Arqivo AI",
     },
   ]);
@@ -192,7 +204,11 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "Workspace cleared.\n\nTo start again:\n1. Paste text in the box on the left.\n2. Check the safety box.\n3. Click a button or type a question.",
+          "Workspace cleared.\n\n" +
+          "To start again:\n" +
+          "1. Paste a case, email, note, or document in the box on the left.\n" +
+          "2. Check the safety box.\n" +
+          "3. Choose what you need: summary, missing info, risk, next steps, draft, or report.",
         source: "Arqivo AI",
       },
     ]);
@@ -207,7 +223,11 @@ export default function Home() {
       {
         role: "assistant",
         content:
-          "A new sample is ready.\n\nTo use it:\n1. Read the text on the left.\n2. Check the safety box.\n3. Click a button or type a question.",
+          "A new sample is ready.\n\n" +
+          "To use it:\n" +
+          "1. Read the sample text on the left.\n" +
+          "2. Check the safety box.\n" +
+          "3. Choose what you need: summary, missing info, risk, next steps, draft, or report.",
         source: "Arqivo AI",
       },
     ]);

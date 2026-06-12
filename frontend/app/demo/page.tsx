@@ -23,30 +23,96 @@ type AnalysisResult = {
   audit_log: string[];
 };
 
-const sampleText = `Maria submitted a request for rent assistance. She included her ID and proof of address, but did not include proof of income. Her deadline is May 30. She asked if her case can still be reviewed before the deadline.`;
+type SampleCase = {
+  label: string;
+  title: string;
+  text: string;
+};
+
+const sampleCases: SampleCase[] = [
+  {
+    label: "Housing",
+    title: "Rent Assistance Case",
+    text: `Maria submitted a request for rent assistance. She included her ID and proof of address, but did not include proof of income. Her deadline is May 30. She asked if her case can still be reviewed before the deadline.`,
+  },
+  {
+    label: "Student",
+    title: "Student Advising Case",
+    text: `A student emailed the advising office saying they are worried about graduating on time. They completed most major requirements but are missing one upper-level elective. They need guidance before registration closes next week.`,
+  },
+  {
+    label: "Refund",
+    title: "Duplicate Charge Case",
+    text: `A customer says they were charged twice for the same order. They included the order number but did not include a bank statement or receipt. They want the issue resolved as soon as possible.`,
+  },
+  {
+    label: "Benefits",
+    title: "Benefits Renewal Case",
+    text: `A family submitted a benefits renewal request. They included identification and proof of residency, but the income section is incomplete. The renewal deadline is June 28, and they asked whether missing documents will delay the review.`,
+  },
+  {
+    label: "Documents",
+    title: "Missing Paperwork Case",
+    text: `An applicant submitted a support request after receiving a notice about missing paperwork. They included the notice and a short explanation, but did not include the requested verification document. They asked what the next step should be.`,
+  },
+];
 
 export default function Home() {
-  const [text, setText] = useState(sampleText);
+  const [selectedSample, setSelectedSample] = useState(0);
+  const [text, setText] = useState(sampleCases[0].text);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  function chooseSample(index: number) {
+    setSelectedSample(index);
+    setText(sampleCases[index].text);
+    setResult(null);
+    setErrorMessage("");
+  }
 
   async function runAgents() {
+    if (!text.trim()) {
+      setErrorMessage("Please enter a fake case note before running the agents.");
+      return;
+    }
+
     setLoading(true);
     setResult(null);
+    setErrorMessage("");
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    const response = await fetch(`${apiUrl}/analyze`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
+    if (!apiUrl) {
+      setLoading(false);
+      setErrorMessage(
+        "NEXT_PUBLIC_API_URL is missing. Add your backend URL in Vercel or your local .env file.",
+      );
+      return;
+    }
 
-    const data = await response.json();
-    setResult(data);
-    setLoading(false);
+    try {
+      const response = await fetch(`${apiUrl}/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error("The backend did not return a successful response.");
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch {
+      setErrorMessage(
+        "The agent backend could not be reached. Make sure the FastAPI backend is running and NEXT_PUBLIC_API_URL is correct.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -56,8 +122,10 @@ export default function Home() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-blue-300">
             Multi-Agent AI Workflow Demo
           </p>
+
           <h1 className="mb-4 text-5xl font-bold">Arqivo AI</h1>
-          <p className="max-w-3xl text-lg text-slate-300">
+
+          <p className="max-w-3xl text-lg leading-8 text-slate-300">
             A public demo app that turns messy case notes and documents into
             summaries, missing-information checks, risk flags, next-step plans,
             draft responses, and audit logs.
@@ -67,35 +135,107 @@ export default function Home() {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
             <h2 className="mb-4 text-2xl font-semibold">Try the demo</h2>
-            <p className="mb-4 text-sm text-slate-400">
-              Paste a fake case note below. Do not enter private or sensitive information.
+
+            <p className="mb-4 text-sm leading-6 text-slate-400">
+              Choose a fake sample case or edit the text below. Then click Run
+              AI Agents to see how Arqivo reviews the case step by step.
             </p>
 
+            <div className="mb-5 flex flex-wrap gap-2">
+              {sampleCases.map((sample, index) => (
+                <button
+                  key={sample.label}
+                  type="button"
+                  onClick={() => chooseSample(index)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    selectedSample === index
+                      ? "border-blue-400 bg-blue-500 text-white"
+                      : "border-slate-700 bg-slate-950 text-slate-300 hover:border-blue-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {sample.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-4 rounded-xl border border-slate-800 bg-slate-950 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-300">
+                Current Sample
+              </p>
+
+              <p className="mt-1 text-base font-semibold text-white">
+                {sampleCases[selectedSample].title}
+              </p>
+            </div>
+
             <textarea
-              className="h-72 w-full rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-100 outline-none focus:border-blue-400"
+              className="h-72 w-full resize-none rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm leading-6 text-slate-100 outline-none focus:border-blue-400"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="Paste a fake case note here..."
             />
 
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Safety reminder: do not enter private or sensitive information.
+              Use fake demo text or placeholders.
+            </p>
+
+            {errorMessage && (
+              <div className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
+                {errorMessage}
+              </div>
+            )}
+
             <button
+              type="button"
               onClick={runAgents}
-              disabled={loading}
-              className="mt-4 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-400 disabled:opacity-50"
+              disabled={loading || !text.trim()}
+              className="mt-4 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Running agents..." : "Run AI Agents"}
             </button>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-            <h2 className="mb-4 text-2xl font-semibold">Agents in this system</h2>
-            <div className="space-y-3 text-sm text-slate-300">
-              <p><strong>Intake Agent:</strong> Finds the case type, dates, and keywords.</p>
-              <p><strong>Summary Agent:</strong> Explains the case in simple words.</p>
-              <p><strong>Missing Info Agent:</strong> Checks what required details are missing.</p>
-              <p><strong>Risk Agent:</strong> Flags deadlines, missing info, and suspicious text.</p>
-              <p><strong>Planner Agent:</strong> Creates next steps.</p>
-              <p><strong>Message Agent:</strong> Drafts a human-reviewed response.</p>
-              <p><strong>Quality Agent:</strong> Checks whether the result needs review.</p>
+            <h2 className="mb-4 text-2xl font-semibold">
+              Agents in this system
+            </h2>
+
+            <div className="space-y-3 text-sm leading-6 text-slate-300">
+              <p>
+                <strong>Intake Agent:</strong> Finds the case type, dates, and
+                keywords.
+              </p>
+
+              <p>
+                <strong>Summary Agent:</strong> Explains the case in simple
+                words.
+              </p>
+
+              <p>
+                <strong>Missing Info Agent:</strong> Checks what required
+                details are missing.
+              </p>
+
+              <p>
+                <strong>Risk Agent:</strong> Flags deadlines, missing
+                information, urgency, and suspicious text.
+              </p>
+
+              <p>
+                <strong>Planner Agent:</strong> Creates next steps for a human
+                reviewer.
+              </p>
+
+              <p>
+                <strong>Message Agent:</strong> Drafts a response that a person
+                can review and edit.
+              </p>
+
+              <p>
+                <strong>Quality Agent:</strong> Checks whether the result needs
+                review before action.
+              </p>
             </div>
           </div>
         </div>
@@ -107,7 +247,10 @@ export default function Home() {
             </ResultCard>
 
             <ResultCard title="Case Details">
-              <p><strong>Case Type:</strong> {result.report.case_type}</p>
+              <p>
+                <strong>Case Type:</strong> {result.report.case_type}
+              </p>
+
               <p>
                 <strong>Important Dates:</strong>{" "}
                 {result.report.important_dates.length
@@ -129,37 +272,57 @@ export default function Home() {
             </ResultCard>
 
             <ResultCard title="Risk Analysis">
-              <p><strong>Risk Level:</strong> {result.report.risk.risk_level}</p>
-              <p><strong>Risk Score:</strong> {result.report.risk.risk_score}</p>
-              <ul className="mt-2 list-inside list-disc">
-                {result.report.risk.reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
+              <p>
+                <strong>Risk Level:</strong> {result.report.risk.risk_level}
+              </p>
+
+              <p>
+                <strong>Risk Score:</strong> {result.report.risk.risk_score}
+              </p>
+
+              {result.report.risk.reasons.length ? (
+                <ul className="mt-2 list-inside list-disc">
+                  {result.report.risk.reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2">No risk reasons found.</p>
+              )}
             </ResultCard>
 
             <ResultCard title="Recommended Next Steps">
-              <ol className="list-inside list-decimal">
-                {result.report.recommended_steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              {result.report.recommended_steps.length ? (
+                <ol className="list-inside list-decimal">
+                  {result.report.recommended_steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p>No next steps were created.</p>
+              )}
             </ResultCard>
 
             <ResultCard title="Draft Message">
-              <pre className="whitespace-pre-wrap rounded-xl bg-slate-950 p-4 text-sm">
+              <pre className="whitespace-pre-wrap rounded-xl bg-slate-950 p-4 text-sm leading-6">
                 {result.report.draft_message}
               </pre>
             </ResultCard>
 
             <ResultCard title="Quality Check">
-              <p><strong>Status:</strong> {result.quality_check.quality_status}</p>
-              {result.quality_check.warnings.length > 0 && (
+              <p>
+                <strong>Status:</strong>{" "}
+                {result.quality_check.quality_status}
+              </p>
+
+              {result.quality_check.warnings.length > 0 ? (
                 <ul className="mt-2 list-inside list-disc">
                   {result.quality_check.warnings.map((warning) => (
                     <li key={warning}>{warning}</li>
                   ))}
                 </ul>
+              ) : (
+                <p className="mt-2">No quality warnings found.</p>
               )}
             </ResultCard>
 
@@ -187,7 +350,9 @@ function ResultCard({
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
       <h3 className="mb-3 text-xl font-semibold text-blue-300">{title}</h3>
-      <div className="space-y-2 text-sm text-slate-300">{children}</div>
+      <div className="space-y-2 text-sm leading-6 text-slate-300">
+        {children}
+      </div>
     </div>
   );
 }

@@ -29,6 +29,11 @@ type SampleCase = {
   text: string;
 };
 
+type AgentInfo = {
+  name: string;
+  description: string;
+};
+
 const sampleCases: SampleCase[] = [
   {
     label: "Housing",
@@ -54,6 +59,65 @@ const sampleCases: SampleCase[] = [
     label: "Documents",
     title: "Missing Paperwork Case",
     text: `An applicant submitted a support request after receiving a notice about missing paperwork. They included the notice and a short explanation, but did not include the requested verification document. They asked what the next step should be.`,
+  },
+];
+
+const agents: AgentInfo[] = [
+  {
+    name: "Intake Agent",
+    description: "Finds the case type, dates, keywords, and main request.",
+  },
+  {
+    name: "Summary Agent",
+    description: "Explains the case in simple words.",
+  },
+  {
+    name: "Missing Info Agent",
+    description: "Checks what required details or documents are missing.",
+  },
+  {
+    name: "Risk Agent",
+    description: "Flags deadlines, missing information, urgency, and suspicious text.",
+  },
+  {
+    name: "Deadline Agent",
+    description: "Looks for due dates, review dates, and time-sensitive language.",
+  },
+  {
+    name: "Document Agent",
+    description: "Checks whether the person included the documents needed for review.",
+  },
+  {
+    name: "Eligibility Agent",
+    description: "Identifies whether the case may be ready for review or still incomplete.",
+  },
+  {
+    name: "Priority Agent",
+    description: "Helps decide whether the case should be handled normally or quickly.",
+  },
+  {
+    name: "Planner Agent",
+    description: "Creates next steps for a human reviewer.",
+  },
+  {
+    name: "Message Agent",
+    description: "Drafts a response that a person can review and edit.",
+  },
+  {
+    name: "Tone Agent",
+    description: "Makes the response sound clear, respectful, and professional.",
+  },
+  {
+    name: "Quality Agent",
+    description: "Checks whether the result needs review before action.",
+  },
+  {
+    name: "Safety Agent",
+    description: "Reminds users not to enter private or sensitive real information.",
+  },
+  {
+    name: "Audit Log Agent",
+    description: "Creates a simple record of what the system checked.",
   },
 ];
 
@@ -201,41 +265,24 @@ export default function Home() {
               Agents in this system
             </h2>
 
-            <div className="space-y-3 text-sm leading-6 text-slate-300">
-              <p>
-                <strong>Intake Agent:</strong> Finds the case type, dates, and
-                keywords.
-              </p>
+            <p className="mb-5 text-sm leading-6 text-slate-400">
+              Arqivo uses several focused agents. Each one checks a different
+              part of the case so the final output is easier for a person to
+              review.
+            </p>
 
-              <p>
-                <strong>Summary Agent:</strong> Explains the case in simple
-                words.
-              </p>
-
-              <p>
-                <strong>Missing Info Agent:</strong> Checks what required
-                details are missing.
-              </p>
-
-              <p>
-                <strong>Risk Agent:</strong> Flags deadlines, missing
-                information, urgency, and suspicious text.
-              </p>
-
-              <p>
-                <strong>Planner Agent:</strong> Creates next steps for a human
-                reviewer.
-              </p>
-
-              <p>
-                <strong>Message Agent:</strong> Drafts a response that a person
-                can review and edit.
-              </p>
-
-              <p>
-                <strong>Quality Agent:</strong> Checks whether the result needs
-                review before action.
-              </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {agents.map((agent) => (
+                <div
+                  key={agent.name}
+                  className="rounded-xl border border-slate-800 bg-slate-950 p-4"
+                >
+                  <p className="font-semibold text-blue-300">{agent.name}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {agent.description}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

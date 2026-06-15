@@ -146,6 +146,7 @@ def missing_info_agent(text: str, case_type: str) -> List[str]:
 def deadline_agent(text: str, intake: Dict) -> Dict:
     lowered = text.lower()
     dates = intake.get("important_dates", [])
+
     deadline_terms = [
         "deadline",
         "due",
@@ -159,13 +160,8 @@ def deadline_agent(text: str, intake: Dict) -> Dict:
 
     found_terms = [term for term in deadline_terms if term in lowered]
 
-    if dates or found_terms:
-        urgency = "Time-sensitive"
-    else:
-        urgency = "No clear deadline found"
-
     return {
-        "urgency_status": urgency,
+        "urgency_status": "Time-sensitive" if dates or found_terms else "No clear deadline found",
         "important_dates": dates,
         "deadline_terms": found_terms,
     }
@@ -196,41 +192,6 @@ def document_agent(text: str, case_type: str, missing_info: List[str]) -> Dict:
         "included_documents": included_documents,
         "missing_documents": missing_info,
         "document_status": "Incomplete" if missing_info else "Ready for review",
-    }
-
-
-def eligibility_agent(case_type: str, missing_info: List[str], deadline: Dict) -> Dict:
-    if missing_info:
-        status = "May not be ready for final review"
-        reason = "Required information is missing."
-    elif deadline["urgency_status"] == "Time-sensitive":
-        status = "Ready for review, but time-sensitive"
-        reason = "No missing documents were found, but the case mentions a deadline or urgent timing."
-    else:
-        status = "Ready for review"
-        reason = "No obvious missing information was found."
-
-    return {
-        "eligibility_status": status,
-        "reason": reason,
-        "case_type": case_type,
-    }
-
-
-def priority_agent(risk: Dict, deadline: Dict, missing_info: List[str]) -> Dict:
-    if risk["risk_level"] == "High":
-        priority = "High"
-        reason = "The case has high risk and should be reviewed quickly."
-    elif deadline["urgency_status"] == "Time-sensitive" or missing_info:
-        priority = "Medium"
-        reason = "The case has a deadline or missing information."
-    else:
-        priority = "Normal"
-        reason = "No urgent deadline or major missing information was found."
-
-    return {
-        "priority_level": priority,
-        "reason": reason,
     }
 
 
@@ -273,6 +234,47 @@ def risk_agent(text: str, missing_info: List[str], intake: Dict) -> Dict:
     }
 
 
+def eligibility_agent(case_type: str, missing_info: List[str], deadline: Dict) -> Dict:
+    if missing_info:
+        return {
+            "eligibility_status": "May not be ready for final review",
+            "reason": "Required information is missing.",
+            "case_type": case_type,
+        }
+
+    if deadline["urgency_status"] == "Time-sensitive":
+        return {
+            "eligibility_status": "Ready for review, but time-sensitive",
+            "reason": "No missing documents were found, but the case mentions a deadline or urgent timing.",
+            "case_type": case_type,
+        }
+
+    return {
+        "eligibility_status": "Ready for review",
+        "reason": "No obvious missing information was found.",
+        "case_type": case_type,
+    }
+
+
+def priority_agent(risk: Dict, deadline: Dict, missing_info: List[str]) -> Dict:
+    if risk["risk_level"] == "High":
+        return {
+            "priority_level": "High",
+            "reason": "The case has high risk and should be reviewed quickly.",
+        }
+
+    if deadline["urgency_status"] == "Time-sensitive" or missing_info:
+        return {
+            "priority_level": "Medium",
+            "reason": "The case has a deadline or missing information.",
+        }
+
+    return {
+        "priority_level": "Normal",
+        "reason": "No urgent deadline or major missing information was found.",
+    }
+
+
 def planner_agent(
     case_type: str,
     missing_info: List[str],
@@ -309,6 +311,32 @@ def planner_agent(
     steps.append("Mark the case complete only after the review is finished.")
 
     return steps
+
+
+def message_agent(case_type: str, missing_info: List[str]) -> str:
+    if missing_info:
+        return (
+            "Subject: Additional Information Needed for Your Request\n\n"
+            "Hello,\n\n"
+            "Thank you for submitting your request. We reviewed the information you provided, "
+            "and we noticed that the following item is still needed before the review can continue:\n\n"
+            + "\n".join([f"- {item}" for item in missing_info])
+            + "\n\nPlease provide this information so your case can continue through the review process.\n\n"
+            "Best,\n"
+            "[Your Name]\n"
+            "[Your Role / Organization]"
+        )
+
+    return (
+        "Subject: Your Request Is Ready for Review\n\n"
+        "Hello,\n\n"
+        "Thank you for submitting your request. We reviewed the information provided, "
+        "and your case appears ready for the next step in the review process.\n\n"
+        "A reviewer will follow up if any additional information is needed.\n\n"
+        "Best,\n"
+        "[Your Name]\n"
+        "[Your Role / Organization]"
+    )
 
 
 def tone_agent(draft_message: str) -> Dict:
@@ -353,41 +381,15 @@ def safety_agent(text: str) -> Dict:
     if "@" in text:
         warnings.append("Possible email address detected.")
 
-    has_number_sequence = any(character.isdigit() for character in text)
+    digit_count = len([char for char in text if char.isdigit()])
 
-    if has_number_sequence and len([char for char in text if char.isdigit()]) >= 9:
+    if digit_count >= 9:
         warnings.append("Possible ID number or long number sequence detected.")
 
     return {
         "safety_status": "Needs privacy review" if warnings else "No obvious sensitive information found",
         "warnings": warnings,
     }
-
-
-def message_agent(case_type: str, missing_info: List[str]) -> str:
-    if missing_info:
-        return (
-            "Subject: Additional Information Needed for Your Request\n\n"
-            "Hello,\n\n"
-            "Thank you for submitting your request. We reviewed the information you provided, "
-            "and we noticed that the following item is still needed before the review can continue:\n\n"
-            + "\n".join([f"- {item}" for item in missing_info])
-            + "\n\nPlease provide this information so your case can continue through the review process.\n\n"
-            "Best,\n"
-            "[Your Name]\n"
-            "[Your Role / Organization]"
-        )
-
-    return (
-        "Subject: Your Request Is Ready for Review\n\n"
-        "Hello,\n\n"
-        "Thank you for submitting your request. We reviewed the information provided, "
-        "and your case appears ready for the next step in the review process.\n\n"
-        "A reviewer will follow up if any additional information is needed.\n\n"
-        "Best,\n"
-        "[Your Name]\n"
-        "[Your Role / Organization]"
-    )
 
 
 def report_agent(
@@ -432,8 +434,8 @@ def quality_agent(report: Dict) -> Dict:
     if report["risk"]["risk_level"] == "High":
         warnings.append("High-risk case should be reviewed by a human.")
 
-    if report["missing_information"] and "missing" not in report["draft_message"].lower():
-        warnings.append("Draft message may not clearly mention missing information.")
+    if report["missing_information"] and "needed" not in report["draft_message"].lower():
+        warnings.append("Draft message may not clearly mention what is needed.")
 
     safety = report.get("agent_checks", {}).get("safety", {})
     safety_warnings = safety.get("warnings", [])

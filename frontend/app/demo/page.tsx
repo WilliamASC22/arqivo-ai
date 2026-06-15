@@ -2,6 +2,38 @@
 
 import { useState } from "react";
 
+type AgentChecks = {
+  deadline?: {
+    urgency_status?: string;
+    important_dates?: string[];
+    deadline_terms?: string[];
+  };
+  documents?: {
+    required_documents?: string[];
+    included_documents?: string[];
+    missing_documents?: string[];
+    document_status?: string;
+  };
+  eligibility?: {
+    eligibility_status?: string;
+    reason?: string;
+    case_type?: string;
+  };
+  priority?: {
+    priority_level?: string;
+    reason?: string;
+  };
+  tone?: {
+    tone_status?: string;
+    notes?: string[];
+    improved_message?: string;
+  };
+  safety?: {
+    safety_status?: string;
+    warnings?: string[];
+  };
+};
+
 type AnalysisResult = {
   report: {
     summary: string;
@@ -15,6 +47,7 @@ type AnalysisResult = {
     };
     recommended_steps: string[];
     draft_message: string;
+    agent_checks?: AgentChecks;
   };
   quality_check: {
     quality_status: string;
@@ -121,6 +154,14 @@ const agents: AgentInfo[] = [
   },
 ];
 
+function formatList(items?: string[]) {
+  if (!items || items.length === 0) {
+    return "None found";
+  }
+
+  return items.join(", ");
+}
+
 export default function Home() {
   const [selectedSample, setSelectedSample] = useState(0);
   const [text, setText] = useState(sampleCases[0].text);
@@ -178,6 +219,8 @@ export default function Home() {
       setLoading(false);
     }
   }
+
+  const checks = result?.report.agent_checks;
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -335,6 +378,103 @@ export default function Home() {
                 </ul>
               ) : (
                 <p className="mt-2">No risk reasons found.</p>
+              )}
+            </ResultCard>
+
+            <ResultCard title="Deadline Agent">
+              <p>
+                <strong>Status:</strong>{" "}
+                {checks?.deadline?.urgency_status || "Not checked"}
+              </p>
+
+              <p>
+                <strong>Important Dates:</strong>{" "}
+                {formatList(checks?.deadline?.important_dates)}
+              </p>
+
+              <p>
+                <strong>Deadline Terms:</strong>{" "}
+                {formatList(checks?.deadline?.deadline_terms)}
+              </p>
+            </ResultCard>
+
+            <ResultCard title="Document Agent">
+              <p>
+                <strong>Status:</strong>{" "}
+                {checks?.documents?.document_status || "Not checked"}
+              </p>
+
+              <p>
+                <strong>Required:</strong>{" "}
+                {formatList(checks?.documents?.required_documents)}
+              </p>
+
+              <p>
+                <strong>Included:</strong>{" "}
+                {formatList(checks?.documents?.included_documents)}
+              </p>
+
+              <p>
+                <strong>Missing:</strong>{" "}
+                {formatList(checks?.documents?.missing_documents)}
+              </p>
+            </ResultCard>
+
+            <ResultCard title="Eligibility Agent">
+              <p>
+                <strong>Status:</strong>{" "}
+                {checks?.eligibility?.eligibility_status || "Not checked"}
+              </p>
+
+              <p>
+                <strong>Reason:</strong>{" "}
+                {checks?.eligibility?.reason || "No reason provided"}
+              </p>
+            </ResultCard>
+
+            <ResultCard title="Priority Agent">
+              <p>
+                <strong>Priority:</strong>{" "}
+                {checks?.priority?.priority_level || "Not checked"}
+              </p>
+
+              <p>
+                <strong>Reason:</strong>{" "}
+                {checks?.priority?.reason || "No reason provided"}
+              </p>
+            </ResultCard>
+
+            <ResultCard title="Safety Agent">
+              <p>
+                <strong>Status:</strong>{" "}
+                {checks?.safety?.safety_status || "Not checked"}
+              </p>
+
+              {checks?.safety?.warnings?.length ? (
+                <ul className="mt-2 list-inside list-disc">
+                  {checks.safety.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No safety warnings found.</p>
+              )}
+            </ResultCard>
+
+            <ResultCard title="Tone Agent">
+              <p>
+                <strong>Status:</strong>{" "}
+                {checks?.tone?.tone_status || "Not checked"}
+              </p>
+
+              {checks?.tone?.notes?.length ? (
+                <ul className="mt-2 list-inside list-disc">
+                  {checks.tone.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No tone notes found.</p>
               )}
             </ResultCard>
 

@@ -23,6 +23,7 @@ const quickPrompts = [
   "Recommend next steps",
   "Draft a response",
   "Generate a final report",
+  "Which agents are being used?",
 ];
 
 const sensitivePatterns = [

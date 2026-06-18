@@ -13,6 +13,8 @@ type ChatRequest = {
   history?: ChatMessage[];
 };
 
+const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -51,8 +53,37 @@ function detectPossibleSensitiveInfo(text: string) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function getAgentsExplanation() {
+  return (
+    "Arqivo uses several focused agents and checks:\n\n" +
+    "1. Safety Agent checks for possible private or sensitive information.\n" +
+    "2. Intake Agent finds the case type, dates, keywords, and main request.\n" +
+    "3. Summary Agent explains the case in simple words.\n" +
+    "4. Missing Info Agent checks what required information is missing.\n" +
+    "5. Document Agent checks whether required documents were included.\n" +
+    "6. Deadline Agent looks for due dates and time-sensitive language.\n" +
+    "7. Risk Agent flags missing information, urgency, deadlines, and suspicious text.\n" +
+    "8. Eligibility Agent checks whether the case may be ready for review.\n" +
+    "9. Priority Agent decides whether the case should be handled normally or quickly.\n" +
+    "10. Planner Agent creates next steps.\n" +
+    "11. Message Agent drafts a response.\n" +
+    "12. Tone Agent checks that the response is clear and professional.\n" +
+    "13. Quality Agent reviews the output before action.\n" +
+    "14. Audit Log Agent records what the system checked.\n\n" +
+    "On the main chat page, Cloudflare AI explains and applies this workflow. On the Agent Demo page, the FastAPI backend runs the structured Python agent pipeline."
+  );
+}
+
 function getTaskHint(message: string) {
   const lower = message.toLowerCase();
+
+  if (
+    lower.includes("which agents") ||
+    lower.includes("what agents") ||
+    lower.includes("agents being used")
+  ) {
+    return "Task: Explain which Arqivo agents are used and what each agent does.";
+  }
 
   if (lower.includes("summarize") || lower.includes("summary")) {
     return "Task: Summarize the case clearly in 3-5 bullet points.";
@@ -123,7 +154,7 @@ Rules for drafted messages:
   return "Task: Answer the user's question using the case text. If the question is vague, ask one helpful follow-up question. Do not use the word worker in the final answer.";
 }
 
-function buildPrompt(message: string, caseText: string, history: ChatMessage[]) {
+function buildMessages(message: string, caseText: string, history: ChatMessage[]) {
   const safeCaseText = limitText(caseText, 4000);
 
   const safeHistory = history
@@ -134,15 +165,24 @@ function buildPrompt(message: string, caseText: string, history: ChatMessage[]) 
 
   const taskHint = getTaskHint(message);
 
-  return `
+  const systemPrompt = `
 You are Arqivo AI, a professional case-assistant chatbot.
 
 Use a multi-agent style internally:
-1. Intake Agent: identify the request type and key facts.
-2. Missing Information Agent: find missing or incomplete information.
-3. Risk Agent: identify urgency, deadlines, incomplete documents, or review risks.
-4. Planning Agent: suggest practical next steps.
-5. Communication Agent: draft clear messages when asked.
+1. Safety Agent: check for possible private or sensitive information.
+2. Intake Agent: identify the request type and key facts.
+3. Summary Agent: summarize the case clearly.
+4. Missing Information Agent: find missing or incomplete information.
+5. Document Agent: check whether documents are included or missing.
+6. Deadline Agent: identify due dates and time-sensitive language.
+7. Risk Agent: identify urgency, deadlines, incomplete documents, or review risks.
+8. Eligibility Agent: explain whether the case seems ready for review.
+9. Priority Agent: decide whether the case should be handled normally or quickly.
+10. Planning Agent: suggest practical next steps.
+11. Communication Agent: draft clear messages when asked.
+12. Tone Agent: keep responses clear, respectful, and professional.
+13. Quality Agent: remind the user that a person must review the output.
+14. Audit Log Agent: explain what was checked when asked.
 
 Safety rules:
 - Do not claim this is legal, medical, financial, or government advice.
@@ -155,7 +195,9 @@ Safety rules:
 - Keep the answer concise to save free AI usage.
 
 ${taskHint}
+`.trim();
 
+  const userPrompt = `
 Case/document text:
 ${safeCaseText || "No case text was provided."}
 
@@ -164,9 +206,18 @@ ${safeHistory || "No previous messages."}
 
 User message:
 ${limitText(message, 500)}
-
-Answer:
 `.trim();
+
+  return [
+    {
+      role: "system",
+      content: systemPrompt,
+    },
+    {
+      role: "user",
+      content: userPrompt,
+    },
+  ];
 }
 
 export default {
@@ -184,6 +235,7 @@ export default {
       return jsonResponse({
         message: "Arqivo AI Cloudflare Worker is running.",
         status: "ok",
+        model: MODEL,
       });
     }
 
@@ -192,7 +244,7 @@ export default {
         {
           error: "Not found. Use POST /chat.",
         },
-        404
+        404,
       );
     }
 
@@ -209,7 +261,7 @@ export default {
             reply: "Please enter a message first.",
             source: "Cloudflare Workers AI",
           },
-          400
+          400,
         );
       }
 
@@ -220,15 +272,39 @@ export default {
               "This case is too long for the free demo limit. Please shorten it to 4,000 characters or less before sending.",
             source: "Arqivo AI Safety Limit",
           },
-          200
+          200,
+        );
+      }
+
+      const lowerMessage = message.toLowerCase();
+
+      if (
+        lowerMessage.includes("which agents") ||
+        lowerMessage.includes("what agents") ||
+        lowerMessage.includes("agents being used")
+      ) {
+        return jsonResponse({
+          reply: getAgentsExplanation(),
+          source: "Arqivo AI",
+        });
+      }
+
+      if (!env.AI) {
+        return jsonResponse(
+          {
+            reply:
+              "Cloudflare Workers AI is not connected to this Worker. Check the AI binding in wrangler.toml and redeploy the Worker.",
+            source: "Cloudflare Workers AI Binding Error",
+          },
+          200,
         );
       }
 
       const sensitiveFound = detectPossibleSensitiveInfo(caseText);
-      const prompt = buildPrompt(message, caseText, history);
+      const messages = buildMessages(message, caseText, history);
 
-      const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-        prompt,
+      const result = await env.AI.run(MODEL, {
+        messages,
         max_tokens: 450,
         temperature: 0.4,
       });
@@ -249,14 +325,20 @@ export default {
         reply: `${aiReply}${safetyNote}`,
         source: "Cloudflare Workers AI",
       });
-    } catch {
+    } catch (error) {
+      console.error("Arqivo Worker AI error:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown Worker AI error";
+
       return jsonResponse(
         {
           reply:
-            "Cloudflare Workers AI could not answer right now. The free daily limit may have been reached, or the request failed.",
+            "Cloudflare Workers AI could not answer right now. This is likely a Worker AI binding, model, or deployment issue. Check npx wrangler tail for the full error.",
           source: "Cloudflare Workers AI Error",
+          error: errorMessage,
         },
-        200
+        200,
       );
     }
   },

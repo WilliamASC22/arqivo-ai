@@ -86,7 +86,24 @@ function getTaskHint(message: string) {
   }
 
   if (lower.includes("summarize") || lower.includes("summary")) {
-    return "Task: Summarize the case clearly in 3-5 bullet points.";
+    return `
+Task: Summarize the case clearly.
+
+Use this format:
+
+Summary Agent
+
+- Main request:
+- Key facts:
+- Important dates:
+- Main issue:
+- What the reviewer should notice:
+
+Rules:
+- Use only the case text.
+- Do not invent facts.
+- Keep it concise.
+`.trim();
   }
 
   if (
@@ -94,7 +111,37 @@ function getTaskHint(message: string) {
     lower.includes("required") ||
     lower.includes("need")
   ) {
-    return "Task: Identify missing or incomplete information from the case. Explain why it matters and what should be requested next.";
+    return `
+Task: Identify missing or incomplete information.
+
+Use this format:
+
+Missing Information Agent
+
+Missing or incomplete items:
+1.
+2.
+3.
+
+Document Agent
+
+Included documents:
+-
+
+Missing documents:
+-
+
+Why this matters:
+-
+
+Recommended request:
+-
+
+Rules:
+- Use only the case text.
+- Do not invent documents unless clearly marked as "may be needed."
+- Keep the answer practical.
+`.trim();
   }
 
   if (
@@ -102,7 +149,37 @@ function getTaskHint(message: string) {
     lower.includes("risky") ||
     lower.includes("urgent")
   ) {
-    return "Task: Assess the risk level and explain the reasons briefly. Do not overstate risk beyond what the case text supports.";
+    return `
+Task: Assess the risk level.
+
+Use this format:
+
+Risk Agent
+
+Risk level: Low, Medium, or High
+
+Reasons:
+1.
+2.
+3.
+
+Deadline Agent
+
+Time-sensitive details:
+-
+
+Priority Agent
+
+Recommended priority:
+-
+
+Quality note:
+A human reviewer should review the output before action.
+
+Rules:
+- Do not overstate risk beyond what the case text supports.
+- Use only the case text.
+`.trim();
   }
 
   if (
@@ -113,7 +190,34 @@ function getTaskHint(message: string) {
     lower.includes("recommend") ||
     lower.includes("do")
   ) {
-    return "Task: Recommend practical next steps for the case reviewer in a numbered list. Do not use the word worker in the final answer.";
+    return `
+Task: Recommend practical next steps.
+
+Use this format:
+
+Planner Agent
+
+Recommended next steps:
+1.
+2.
+3.
+4.
+
+Priority Agent
+
+Review priority:
+-
+
+Quality Agent
+
+Human review note:
+-
+
+Rules:
+- Do not use the word "worker" in the final answer.
+- Use "reviewer", "case reviewer", "case manager", or "team."
+- Keep the steps clear and realistic.
+`.trim();
   }
 
   if (
@@ -126,7 +230,9 @@ function getTaskHint(message: string) {
     return `
 Task: Draft a professional message.
 
-Format the message exactly like this:
+Use this format:
+
+Message Agent
 
 Dear [Client Name],
 
@@ -137,10 +243,17 @@ Dear [Client Name],
 Best regards,
 [Your Name or Department]
 
+Tone Agent
+
+Tone review:
+- Clear
+- Respectful
+- Professional
+
 Rules for drafted messages:
 - Do not wrap the message in quotation marks.
 - Do not say "Here is a draft" unless the user asks for explanation.
-- Do not add extra commentary after the signature.
+- Do not add extra commentary after the signature except the Tone Agent section.
 - Use placeholders like [Client Name] and [Your Name or Department] if names are not provided.
 - If a client, applicant, tenant, or contact name is clearly provided in the case text, you may use it.
 - Do not sign as Arqivo AI Team.
@@ -148,7 +261,86 @@ Rules for drafted messages:
   }
 
   if (lower.includes("report") || lower.includes("final")) {
-    return "Task: Create a concise final case report with sections for Summary, Missing Information, Risk Level, Recommended Next Steps, and Draft Response if relevant. Do not use the word worker in the final answer.";
+    return `
+Task: Create a final case report using the full Arqivo multi-agent workflow.
+
+Use these exact sections in this exact order:
+
+1. Case Summary
+Use the Summary Agent to explain the case in simple language.
+
+2. Safety Check
+Use the Safety Agent to say whether the case text appears safe for a public demo or whether private information should be removed.
+
+3. Intake Details
+Use the Intake Agent to identify:
+- Case type
+- Main request
+- Important dates
+- Keywords or key issues
+
+4. Missing Information
+Use the Missing Information Agent to list missing or incomplete information.
+
+5. Document Check
+Use the Document Agent to explain:
+- Documents included
+- Documents missing
+- Documents that may need review
+
+6. Deadline Check
+Use the Deadline Agent to identify:
+- Deadlines
+- Due dates
+- Notice periods
+- Time-sensitive language
+
+7. Risk Level
+Use the Risk Agent to give a Low, Medium, or High risk level and explain why.
+
+8. Eligibility / Readiness
+Use the Eligibility Agent to explain whether the case appears ready for review or still incomplete.
+
+9. Priority
+Use the Priority Agent to say whether the case should be handled normally or reviewed quickly.
+
+10. Recommended Next Steps
+Use the Planner Agent to list practical next steps for the reviewer or case team.
+
+11. Draft Response
+Use the Message Agent to draft a clear response message with placeholders if needed.
+
+12. Tone Review
+Use the Tone Agent to briefly confirm whether the draft sounds clear, respectful, and professional.
+
+13. Quality Review
+Use the Quality Agent to state whether a human should review the output before action.
+
+14. Audit Log
+Use the Audit Log Agent to list every agent used:
+- Safety Agent
+- Intake Agent
+- Summary Agent
+- Missing Information Agent
+- Document Agent
+- Deadline Agent
+- Risk Agent
+- Eligibility Agent
+- Priority Agent
+- Planner Agent
+- Message Agent
+- Tone Agent
+- Quality Agent
+- Audit Log Agent
+
+Rules:
+- Do not invent facts not supported by the case text.
+- Do not use the word "worker" in the final answer.
+- Use "reviewer", "case reviewer", "case manager", or "team" instead.
+- Do not sign as Arqivo AI Team.
+- Keep the report organized and readable.
+- A human must review the final output before anyone uses it.
+`.trim();
   }
 
   return "Task: Answer the user's question using the case text. If the question is vague, ask one helpful follow-up question. Do not use the word worker in the final answer.";
@@ -178,8 +370,8 @@ Use a multi-agent style internally:
 7. Risk Agent: identify urgency, deadlines, incomplete documents, or review risks.
 8. Eligibility Agent: explain whether the case seems ready for review.
 9. Priority Agent: decide whether the case should be handled normally or quickly.
-10. Planning Agent: suggest practical next steps.
-11. Communication Agent: draft clear messages when asked.
+10. Planner Agent: suggest practical next steps.
+11. Message Agent: draft clear messages when asked.
 12. Tone Agent: keep responses clear, respectful, and professional.
 13. Quality Agent: remind the user that a person must review the output.
 14. Audit Log Agent: explain what was checked when asked.
@@ -193,6 +385,11 @@ Safety rules:
 - When drafting a message, use a clean letter/email format with greeting, body paragraphs, closing, and sender placeholder.
 - If sensitive real information appears, remind the user to replace it with placeholders.
 - Keep the answer concise to save free AI usage.
+
+Important:
+- If the user asks for a final report, include all 14 agent sections.
+- If the user asks which agents are being used, list all 14 agents.
+- A human must review the output before anyone uses it.
 
 ${taskHint}
 `.trim();
@@ -305,8 +502,8 @@ export default {
 
       const result = await env.AI.run(MODEL, {
         messages,
-        max_tokens: 450,
-        temperature: 0.4,
+        max_tokens: 900,
+        temperature: 0.3,
       });
 
       const aiReply =

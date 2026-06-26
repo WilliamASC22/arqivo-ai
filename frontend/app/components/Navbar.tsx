@@ -13,6 +13,10 @@ export default function Navbar() {
             Chat
           </Link>
 
+          <Link href="/case-builder" className="hover:text-white">
+            Case Builder
+          </Link>
+
           <Link href="/demo" className="hover:text-white">
             Agent Demo
           </Link>
@@ -23,10 +27,6 @@ export default function Navbar() {
 
           <Link href="/agents" className="hover:text-white">
             Agents
-          </Link>
-
-          <Link href="/review-queue" className="hover:text-white">
-            Review Queue
           </Link>
 
           <Link href="/architecture" className="hover:text-white">
